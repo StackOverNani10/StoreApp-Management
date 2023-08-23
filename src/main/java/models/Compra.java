@@ -11,9 +11,10 @@ public class Compra {
     private double precioCompra;
     private double subTotalCompra;
     private double ivaCompra;
+    private double totalCompra;
     private String fechaCompra;
 
-    public Compra(int codigoCompra, String numeroDocumento, int codigoProveedor, int codigoProductoComprado, int unidadesCompradas, double precioCompra, double subTotalCompra, double ivaCompra, String fechaCompra) {
+    public Compra(int codigoCompra, String numeroDocumento, int codigoProveedor, int codigoProductoComprado, int unidadesCompradas, double precioCompra, double subTotalCompra, double ivaCompra, double totalCompra, String fechaCompra) {
         this.codigoCompra = codigoCompra;
         this.numeroDocumento = numeroDocumento;
         this.codigoProveedor = codigoProveedor;
@@ -22,6 +23,7 @@ public class Compra {
         this.precioCompra = precioCompra;
         this.subTotalCompra = subTotalCompra;
         this.ivaCompra = ivaCompra;
+        this.totalCompra = totalCompra;
         this.fechaCompra = fechaCompra;
     }
 
@@ -89,6 +91,14 @@ public class Compra {
         this.ivaCompra = ivaCompra;
     }
 
+    public double getTotalCompra() {
+        return totalCompra;
+    }
+
+    public void setTotalCompra(double totalCompra) {
+        this.totalCompra = totalCompra;
+    }
+
     public String getFechaCompra() {
         return fechaCompra;
     }
@@ -101,11 +111,11 @@ public class Compra {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof Compra compra)) return false;
-        return codigoCompra == compra.codigoCompra && codigoProveedor == compra.codigoProveedor && codigoProductoComprado == compra.codigoProductoComprado && unidadesCompradas == compra.unidadesCompradas && Double.compare(precioCompra, compra.precioCompra) == 0 && Double.compare(subTotalCompra, compra.subTotalCompra) == 0 && Double.compare(ivaCompra, compra.ivaCompra) == 0 && Objects.equals(numeroDocumento, compra.numeroDocumento) && Objects.equals(fechaCompra, compra.fechaCompra);
+        return codigoCompra == compra.codigoCompra && codigoProveedor == compra.codigoProveedor && codigoProductoComprado == compra.codigoProductoComprado && unidadesCompradas == compra.unidadesCompradas && Double.compare(precioCompra, compra.precioCompra) == 0 && Double.compare(subTotalCompra, compra.subTotalCompra) == 0 && Double.compare(ivaCompra, compra.ivaCompra) == 0 && Double.compare(totalCompra, compra.totalCompra) == 0 && Objects.equals(numeroDocumento, compra.numeroDocumento) && Objects.equals(fechaCompra, compra.fechaCompra);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(codigoCompra, numeroDocumento, codigoProveedor, codigoProductoComprado, unidadesCompradas, precioCompra, subTotalCompra, ivaCompra, fechaCompra);
+        return Objects.hash(codigoCompra, numeroDocumento, codigoProveedor, codigoProductoComprado, unidadesCompradas, precioCompra, subTotalCompra, ivaCompra, totalCompra, fechaCompra);
     }
 }

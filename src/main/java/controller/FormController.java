@@ -12,9 +12,7 @@ import javafx.scene.layout.AnchorPane;
 import models.*;
 import java.net.URL;
 import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.List;
-import java.util.ResourceBundle;
+import java.util.*;
 
 public class FormController implements Initializable {
 
@@ -49,22 +47,17 @@ public class FormController implements Initializable {
     @FXML private TextField txtCantidad;
     @FXML private TextField txtPrecio;
     @FXML private TextField txtStock;
-    @FXML private TextField txtMargen;
     @FXML private TextField txtCodigoVenta;
-    @FXML private TextField txtCodigoProducto;
     @FXML private TextField txtUnidades;
     @FXML private TextField txtCodCompra;
     @FXML private TextField txtNumDoc;
-    @FXML private TextField txtCodProveedor;
-    @FXML private TextField txtCodProductoCompra;
     @FXML private TextField txtUnidadCompra;
     @FXML private TextField txtCodigoPedido;
-    @FXML private TextField txtCodigoProductoPedido;
     @FXML private TextField txtUnidadesPedidas;
     @FXML private TextField txtCodigoProveedor;
     @FXML private TextField txtNombreProveedor;
-    @FXML private TextField txtCodigoProductoProveedor;
     @FXML private TextField txtRuta;
+    @FXML private TextField txtPrecioProductoProveedor;
     @FXML private TextField txtDireccion;
     @FXML private TextField txtCiudad;
     @FXML private TextField txtTelefono;
@@ -72,6 +65,21 @@ public class FormController implements Initializable {
     @FXML private TextField txtFax;
     @FXML private TextField txtFormula;
     @FXML private TextField txtFactor;
+
+    //Declaramos y definimos los ComboBox
+    @FXML private ComboBox cboxCodProductoProveedor;
+    @FXML private ComboBox cboxCodProductoPedido;
+    @FXML private ComboBox cboxCodProductoCompra;
+    @FXML private ComboBox cboxCodProveedorCompra;
+    @FXML private ComboBox cboxCodProductoVenta;
+
+    // Creamos las listas de los ComboBox
+    ObservableList<String> listaCodProducto = FXCollections.observableArrayList();
+    ObservableList<String> listaCodProveedor = FXCollections.observableArrayList();
+    ObservableList<String> listaCodProductosProveedor = FXCollections.observableArrayList();
+
+    // Diccionario de proveedores con sus productos
+    Map<Integer, List<Integer>> diccProductoProveedor = new HashMap<>();
 
     // Declaramos los AnchorPane
     @FXML private AnchorPane welcome_form;
@@ -115,6 +123,7 @@ public class FormController implements Initializable {
     @FXML private TableColumn cl_precio_compra;
     @FXML private TableColumn cl_subtotal_compra;
     @FXML private TableColumn cl_iva_compra;
+    @FXML private TableColumn cl_total_compra;
     @FXML private TableColumn cl_fecha_compra;
     private ObservableList<Compra> compras;
 
@@ -159,11 +168,21 @@ public class FormController implements Initializable {
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
+
         agregarDatosProducto();
+
         agregarDatosVenta();
+        cboxCodProductoVenta.setItems(listaCodProducto);
+
         agregarDatosCompra();
+        cboxCodProveedorCompra.setItems(listaCodProveedor);
+        cboxCodProductoCompra.setItems(listaCodProductosProveedor);
+
         agregarDatosPedido();
+        cboxCodProductoPedido.setItems(listaCodProducto);
+
         agregarDatosProveedor();
+        cboxCodProductoProveedor.setItems(listaCodProducto);
     }
 
     public void agregarDatosProducto(){
@@ -211,6 +230,7 @@ public class FormController implements Initializable {
         this.cl_precio_compra.setCellValueFactory(new PropertyValueFactory("precioCompra"));
         this.cl_subtotal_compra.setCellValueFactory(new PropertyValueFactory("subTotalCompra"));
         this.cl_iva_compra.setCellValueFactory(new PropertyValueFactory("ivaCompra"));
+        this.cl_total_compra.setCellValueFactory(new PropertyValueFactory("totalCompra"));
         this.cl_fecha_compra.setCellValueFactory(new PropertyValueFactory("fechaCompra"));
     }
 
@@ -246,6 +266,8 @@ public class FormController implements Initializable {
         this.cl_formula.setCellValueFactory(new PropertyValueFactory("formulaProveedor"));
         this.cl_factor.setCellValueFactory(new PropertyValueFactory("factorProveedor"));
 
+        final ObservableList<Proveedor> tablaProveedorCelda = tbl_Proveedor.getSelectionModel().getSelectedItems();
+        tablaProveedorCelda.addListener(SelectorProveedorTabla);
     }
 
     // Funcion para navegar entre los distintos Forms
@@ -299,13 +321,13 @@ public class FormController implements Initializable {
             int cantidadProducto = Integer.parseInt(txtCantidad.getText());
             double precioProducto = Double.parseDouble(txtPrecio.getText());
             int stockProducto = Integer.parseInt(txtStock.getText());
-            String margenProducto = txtMargen.getText();
 
-            Producto producto = new Producto(codigoProducto, nombreProducto, modeloProducto, cantidadProducto, precioProducto, stockProducto, margenProducto);
+            Producto producto = new Producto(codigoProducto, nombreProducto, modeloProducto, cantidadProducto, precioProducto, stockProducto);
             if(!this.productos.contains(producto)) {
                 if (stockProducto>10) {
                     this.productos.add(producto);
                     this.tbl_producto.setItems(productos);
+                    this.listaCodProducto.add(String.valueOf(codigoProducto)); // Agregamos el codigo de producto a la lista.
                 } else {
                     Alert alert = new Alert(Alert.AlertType.ERROR);
                     alert.setHeaderText(null);
@@ -338,12 +360,19 @@ public class FormController implements Initializable {
             int cantidadProducto = Integer.parseInt(txtCantidad.getText());
             double precioProducto = Double.parseDouble(txtPrecio.getText());
             int stockProducto = Integer.parseInt(txtStock.getText());
-            String margenProducto = txtMargen.getText();
 
-            producto = new Producto(codigoProducto, nombreProducto, modeloProducto, cantidadProducto, precioProducto, stockProducto, margenProducto);
+            Producto producto = new Producto(codigoProducto, nombreProducto, modeloProducto, cantidadProducto, precioProducto, stockProducto);
             if(!this.productos.contains(producto)) {
-                this.productos.set(posicionProductoTabla, producto);
-                this.tbl_producto.setItems(productos);
+                if (stockProducto>10) {
+                    this.productos.set(posicionProductoTabla ,producto);
+                    this.tbl_producto.setItems(productos);
+                } else {
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setHeaderText(null);
+                    alert.setTitle("Error");
+                    alert.setContentText("El stock debe ser mayor que 10");
+                    alert.showAndWait();
+                }
             } else {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setHeaderText(null);
@@ -374,7 +403,6 @@ public class FormController implements Initializable {
         txtCantidad.setText("");
         txtPrecio.setText("");
         txtStock.setText("");
-        txtMargen.setText("");
     }
 
     private final ListChangeListener<Producto> SelectorProductoTabla = new ListChangeListener<Producto>() {
@@ -408,8 +436,6 @@ public class FormController implements Initializable {
             txtCantidad.setText(String.valueOf(producto.getCantidadProducto()));
             txtPrecio.setText(String.valueOf(producto.getPrecioProducto()));
             txtStock.setText(String.valueOf(producto.getStockProducto()));
-            txtMargen.setText(producto.getMargenProducto());
-
         }
     }
 
@@ -419,12 +445,12 @@ public class FormController implements Initializable {
     public void ingresar_venta(ActionEvent event) {
         try {
             int codigoVenta = Integer.parseInt(this.txtCodigoVenta.getText());
-            int codigoProducto = Integer.parseInt(this.txtCodigoProducto.getText());
+            int codigoProducto = Integer.parseInt(cboxCodProductoVenta.getSelectionModel().getSelectedItem().toString());
             Producto productoIndicado = productos.get(codigoProducto - 1); //Tomamos los valores pertenecientes al codigo de producto indicado
             String nombreProducto = productoIndicado.getNombreProducto();
             int unidades = Integer.parseInt(txtUnidades.getText());
-            double subtotal = calcularSubTotal(txtCodigoProducto, txtUnidades);
-            double iva = calcularIva(txtCodigoProducto, txtUnidades);
+            double subtotal = calcularSubTotal(codigoProducto, txtUnidades);
+            double iva = calcularIva(codigoProducto, txtUnidades);
             double precioVenta = subtotal + iva;
             String fechaVenta = formatter.format(date);
 
@@ -433,6 +459,8 @@ public class FormController implements Initializable {
                 if (unidades <= productoIndicado.getStockProducto()) {
                     this.ventas.add(venta);
                     this.tbl_venta.setItems(ventas);
+                    // Llamamos la funcion para que reste las unidades vendidas al stock del producto.
+                    reajusteStock("Restar", codigoProducto, unidades);
                 } else {
                     Alert alert = new Alert(Alert.AlertType.ERROR);
                     alert.setHeaderText(null);
@@ -464,7 +492,6 @@ public class FormController implements Initializable {
     @FXML
     public void clearVentaFields(ActionEvent event) {
         txtCodigoVenta.setText("");
-        txtCodigoProducto.setText("");
         txtUnidades.setText("");
     }
 
@@ -474,19 +501,26 @@ public class FormController implements Initializable {
         try {
             int codigoCompra = Integer.parseInt(this.txtCodCompra.getText());
             String numeroDocumento = txtNumDoc.getText();
-            int codigoProveedor = Integer.parseInt(this.txtCodProveedor.getText());
-            int codigoProductoComprado = Integer.parseInt(this.txtCodProductoCompra.getText());
-            Producto productoElegido = productos.get(codigoProductoComprado - 1); //Tomamos los valores pertenecientes al codigo de producto indicado
+            int codigoProveedor = Integer.parseInt(cboxCodProveedorCompra.getSelectionModel().getSelectedItem().toString());
+            int codigoProductoComprado = Integer.parseInt(cboxCodProductoCompra.getSelectionModel().getSelectedItem().toString());
+            Producto productoElegido = productos.get(codigoProductoComprado - 1); // Obtenemos los datos del producto indicado
+            double precioVenta = productoElegido.getPrecioProducto(); // Guardamos el precio de venta del producto para calcular margen.
             int unidadesCompradas = Integer.parseInt(this.txtUnidadCompra.getText());
-            double precioCompra = productoElegido.getPrecioProducto();
-            double subTotalCompra = calcularSubTotal(txtCodProductoCompra, txtUnidadCompra);
-            double ivaCompra = calcularIva(txtCodProductoCompra, txtUnidadCompra);
+            Proveedor proveedorIndicado = proveedores.get(codigoProveedor - 1); // Obtenemos los datos del proveedor indicado
+            double precioCompra = proveedorIndicado.getPrecioProductoProveedor();
+            double subTotalCompra = unidadesCompradas * precioCompra;
+            double ivaCompra = subTotalCompra * 0.18;
+            double totalCompra = subTotalCompra + ivaCompra;
             String fechaCompra = formatter.format(date);
 
-            compra = new Compra(codigoCompra, numeroDocumento, codigoProveedor, codigoProductoComprado, unidadesCompradas, precioCompra, subTotalCompra, ivaCompra, fechaCompra);
+            compra = new Compra(codigoCompra, numeroDocumento, codigoProveedor, codigoProductoComprado, unidadesCompradas, precioCompra, subTotalCompra, ivaCompra, totalCompra,fechaCompra);
             if(!this.compras.contains(compra)) {
                 this.compras.add(compra);
                 this.tbl_compra.setItems(compras);
+                // Llamamos la funcion para que sume las unidades compradas al stock del producto.
+                reajusteStock("Sumar", codigoProductoComprado, unidadesCompradas);
+                // Llamamos a la funcion de reajustar margen del producto
+                calcularMargen(precioVenta, precioCompra, codigoProductoComprado);
             } else {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setHeaderText(null);
@@ -512,8 +546,6 @@ public class FormController implements Initializable {
     public void clearCompraFields(ActionEvent event){
         txtCodCompra.setText("");
         txtNumDoc.setText("");
-        txtCodProveedor.setText("");
-        txtCodProductoCompra.setText("");
         txtUnidadCompra.setText("");
     }
 
@@ -522,7 +554,7 @@ public class FormController implements Initializable {
     public void ingresar_pedido(ActionEvent event){
         try {
             int codigoPedido = Integer.parseInt(this.txtCodigoPedido.getText());
-            int codigoProductoPedido = Integer.parseInt(this.txtCodigoProductoPedido.getText());
+            int codigoProductoPedido = Integer.parseInt(cboxCodProductoPedido.getSelectionModel().getSelectedItem().toString());
             Producto productoElegido = productos.get(codigoProductoPedido - 1); //Tomamos los valores pertenecientes al codigo de producto indicado
             int unidadPedida = Integer.parseInt(this.txtUnidadesPedidas.getText());
             double precioPedido = productoElegido.getPrecioProducto();
@@ -533,6 +565,8 @@ public class FormController implements Initializable {
             if(!this.pedidos.contains(pedido)) {
                 this.pedidos.add(pedido);
                 this.tbl_pedido.setItems(pedidos);
+                // Llamamos la funcion para que sume las unidades pedidas al stock del producto.
+                reajusteStock("Sumar", codigoProductoPedido, unidadPedida);
             } else {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setHeaderText(null);
@@ -557,7 +591,6 @@ public class FormController implements Initializable {
     @FXML
     public void clearPedidoFields(ActionEvent event){
         txtCodigoPedido.setText("");
-        txtCodigoProductoPedido.setText("");
         txtUnidadesPedidas.setText("");
     }
 
@@ -567,9 +600,8 @@ public class FormController implements Initializable {
         try {
             int codigoProveedor = Integer.parseInt(this.txtCodigoProveedor.getText());
             String nombreProveedor = txtNombreProveedor.getText();
-            int codigoProductoProveedor = Integer.parseInt(this.txtCodigoProductoProveedor.getText());
-            Producto productoElegido = productos.get(codigoProductoProveedor - 1); //Tomamos los valores pertenecientes al codigo de producto indicado
-            double precioProductoProveedor = productoElegido.getPrecioProducto();
+            int codigoProductoProveedor = Integer.parseInt(cboxCodProductoProveedor.getSelectionModel().getSelectedItem().toString());
+            double precioProductoProveedor = Double.parseDouble(txtPrecioProductoProveedor.getText());
             String rutaProveedor = txtRuta.getText();
             String direccionProveedor = txtDireccion.getText();
             String ciudad = txtCiudad.getText();
@@ -583,6 +615,15 @@ public class FormController implements Initializable {
             if(!this.proveedores.contains(proveedor)) {
                 this.proveedores.add(proveedor);
                 this.tbl_Proveedor.setItems(proveedores);
+                if (!this.listaCodProveedor.contains(String.valueOf(codigoProveedor))){
+                    this.listaCodProveedor.add(String.valueOf(codigoProveedor)); // Agregamos el codigo de proveedor a la lista.
+                }
+                if (!diccProductoProveedor.containsKey(codigoProveedor)) { // Preguntamos si el diccionario ya contiene la clave del proveedor ingresado.
+                    diccProductoProveedor.put(codigoProveedor, new ArrayList<>()); // Creamos una nueva lista para la nueva clave del proveedor.
+                    diccProductoProveedor.get(codigoProveedor).add(codigoProductoProveedor);// Agregamos el productos a la clave del proveedor.
+                } else {
+                    diccProductoProveedor.get(codigoProveedor).add(codigoProductoProveedor); // Si ya existe la clave, agregamos otro valor a su lista.
+                }
             } else {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setHeaderText(null);
@@ -604,9 +645,8 @@ public class FormController implements Initializable {
         try {
             int codigoProveedor = Integer.parseInt(this.txtCodigoProveedor.getText());
             String nombreProveedor = txtNombreProveedor.getText();
-            int codigoProductoProveedor = Integer.parseInt(this.txtCodigoProductoProveedor.getText());
-            Producto productoElegido = productos.get(codigoProductoProveedor - 1); //Tomamos los valores pertenecientes al codigo de producto indicado
-            double precioProductoProveedor = productoElegido.getPrecioProducto();
+            int codigoProductoProveedor = Integer.parseInt(cboxCodProductoProveedor.getSelectionModel().getSelectedItem().toString());
+            double precioProductoProveedor = Double.parseDouble(txtPrecioProductoProveedor.getText());
             String rutaProveedor = txtRuta.getText();
             String direccionProveedor = txtDireccion.getText();
             String ciudad = txtCiudad.getText();
@@ -645,8 +685,8 @@ public class FormController implements Initializable {
     public void clearProveedorFields(ActionEvent event){
         txtCodigoProveedor.setText("");
         txtNombreProveedor.setText("");
-        txtCodigoProductoProveedor.setText("");
         txtRuta.setText("");
+        txtPrecioProductoProveedor.setText("");
         txtDireccion.setText("");
         txtCiudad.setText("");
         txtTelefono.setText("");
@@ -667,8 +707,8 @@ public class FormController implements Initializable {
         if (tbl_Proveedor != null) {
             List<Proveedor> tabla = tbl_Proveedor.getSelectionModel().getSelectedItems();
             if (tabla.size() == 1) {
-                final Proveedor competicionSeleccionada = tabla.get(0);
-                return competicionSeleccionada;
+                final Proveedor proveedorSeleccionado = tabla.get(0);
+                return proveedorSeleccionado;
             }
         }
         return null;
@@ -683,8 +723,8 @@ public class FormController implements Initializable {
             // Colocamos los datos correspondientes en los TextFields
             txtCodigoProveedor.setText(String.valueOf(proveedor.getCodigoProveedor()));
             txtNombreProveedor.setText(proveedor.getNombreProveedor());
-            txtCodigoProductoProveedor.setText(String.valueOf(proveedor.getCodigoProductoProveedor()));
             txtRuta.setText(proveedor.getRutaProveedor());
+            txtPrecioProductoProveedor.setText(String.valueOf(proveedor.getPrecioProductoProveedor()));
             txtDireccion.setText(proveedor.getDireccionProveedor());
             txtCiudad.setText(proveedor.getCiudad());
             txtTelefono.setText(proveedor.getTelefonoProveedor());
@@ -696,20 +736,57 @@ public class FormController implements Initializable {
     }
 
     // Funciones de Calculo
-    public double calcularIva(TextField textFieldCodigo, TextField textFieldUnidades) {
+    public double calcularIva(int codigoProducto, TextField textFieldUnidades) {
         double iva = 0.18;
         double und = Double.parseDouble(textFieldUnidades.getText());
-        Producto productoIndicado = productos.get(Integer.parseInt(textFieldCodigo.getText()) - 1); //Tomamos los valores pertenecientes al codigo de producto indicado
+        Producto productoIndicado = productos.get(codigoProducto - 1); //Tomamos los valores pertenecientes al codigo de producto indicado
         double precioProducto = productoIndicado.getPrecioProducto();
         double totalIva = (und * precioProducto) * iva;
         return totalIva;
     }
 
-    public double calcularSubTotal(TextField textFieldCodigo, TextField textFieldUnidades) {
+    public double calcularSubTotal(int codigoProducto, TextField textFieldUnidades) {
         double und = Double.parseDouble(textFieldUnidades.getText());
-        Producto productoIndicado = productos.get(Integer.parseInt(textFieldCodigo.getText()) - 1); //Tomamos los valores pertenecientes al codigo de producto indicado
+        Producto productoIndicado = productos.get(codigoProducto - 1); //Tomamos los valores pertenecientes al codigo de producto indicado
         double precioProducto = productoIndicado.getPrecioProducto();
         double subTotal = (und * precioProducto);
         return subTotal;
+    }
+
+    public void calcularMargen(Double subtotalVenta, Double totalCompra, int codigoproducto){
+        double gananciaNeta = subtotalVenta - totalCompra;
+        double ventas = subtotalVenta;
+        double margenPorcentual = (gananciaNeta/ventas) * 100;
+        String margen = String.valueOf(margenPorcentual);
+        String resultado = margen + " %";
+
+        Producto productoElegido = productos.get(codigoproducto - 1);
+        productoElegido.setMargenProducto(resultado);
+        tbl_producto.refresh(); // Refrescamos la tabla productos para que se reflejen los cambios.
+    }
+
+    public void reajusteStock(String accion, int codigoProducto, int unidades) {
+
+        Producto productoElegido = productos.get(codigoProducto - 1);
+        int stockActual = productoElegido.getStockProducto();
+
+        if (accion == "Sumar"){
+            productoElegido.setStockProducto(stockActual + unidades);
+        } else {
+            productoElegido.setStockProducto(stockActual - unidades);
+        }
+        tbl_producto.refresh(); // Refrescamos la tabla productos para que se reflejen los cambios.
+    }
+
+    // Funcion de generar el comboBox de productos de acuerdo con su proveedor
+    public void generarCBoxProducto(ActionEvent event) {
+        cboxCodProductoCompra.getSelectionModel().clearSelection(); // limpiamos el comboBox
+        int clave = Integer.parseInt(cboxCodProveedorCompra.getSelectionModel().getSelectedItem().toString()); // Obtenemos el valor de la clave que utilazaremos del diccionario.
+        List<Integer> listaDeProductos = diccProductoProveedor.get(clave); // Creamos lista con valores obtenidos por la clave
+
+        listaCodProductosProveedor.clear(); //Limpiamos la lista que rellena el comboBox
+        for (Integer producto : listaDeProductos) {
+            listaCodProductosProveedor.add(String.valueOf(producto)); // Iteramos la lista para colocar sus valores en la lista del comboBox.
+        }
     }
 }

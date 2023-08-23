@@ -12,14 +12,14 @@ public class Producto {
     private int stockProducto;
     private String margenProducto;
 
-    public Producto(int codigoProducto, String nombreProducto, String modeloProducto, int cantidadProducto, double precioProducto, int stockProducto, String margenProducto) {
+    public Producto(int codigoProducto, String nombreProducto, String modeloProducto, int cantidadProducto, double precioProducto, int stockProducto) {
         this.codigoProducto = codigoProducto;
         this.nombreProducto = nombreProducto;
         this.modeloProducto = modeloProducto;
         this.cantidadProducto = cantidadProducto;
         this.precioProducto = precioProducto;
         this.stockProducto = stockProducto;
-        this.margenProducto = margenProducto;
+        margenProducto = "0";  // Si no se ha realizado una compra y una venta del producto su margen será igual a 0
     }
 
     public int getCodigoProducto() {
@@ -82,12 +82,12 @@ public class Producto {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof Producto producto)) return false;
-        return codigoProducto == producto.codigoProducto && cantidadProducto == producto.cantidadProducto && precioProducto == producto.precioProducto && stockProducto == producto.stockProducto && Objects.equals(nombreProducto, producto.nombreProducto) && Objects.equals(modeloProducto, producto.modeloProducto) && Objects.equals(margenProducto, producto.margenProducto);
+        return codigoProducto == producto.codigoProducto && Objects.equals(nombreProducto, producto.nombreProducto) && Objects.equals(modeloProducto, producto.modeloProducto);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(codigoProducto, nombreProducto, modeloProducto, cantidadProducto, precioProducto, stockProducto, margenProducto);
+        return Objects.hash(codigoProducto, nombreProducto, modeloProducto);
     }
 }
 
