@@ -22,26 +22,8 @@ public class FormController implements Initializable {
     @FXML private Button btnVistaCompra;
     @FXML private Button btnVistaPedido;
     @FXML private Button btnVistaProveedor;
-    @FXML private Button btnIngresarProducto;
-    @FXML private Button btnModificarProducto;
-    @FXML private Button btnConsultarProducto;
-    @FXML private Button btnClearProductoFields;
-    @FXML private Button btnIngresarVenta;
-    @FXML private Button btnConsultarVenta;
-    @FXML private Button btnClearVentaField;
-    @FXML private Button btnIngresarCompra;
-    @FXML private Button btnConsultarCompra;
-    @FXML private Button btnClearCompraFields;
-    @FXML private Button btnIngresarPedido;
-    @FXML private Button btnConsultarPedido;
-    @FXML private Button btnClearPedidoField;
-    @FXML private Button btnIngresarProveedor;
-    @FXML private Button btnConsultarProveedor;
-    @FXML private Button btnModificarProveedor;
-    @FXML private Button btnClearProveedorFields;
 
     // Declaramos los TextFields
-    @FXML private TextField txtCod_Product;
     @FXML private TextField txtNombre;
     @FXML private TextField txtModelo;
     @FXML private TextField txtCantidad;
@@ -80,6 +62,9 @@ public class FormController implements Initializable {
 
     // Diccionario de proveedores con sus productos
     Map<Integer, List<Integer>> diccProductoProveedor = new HashMap<>();
+
+    // Lista de productos
+    List<Producto> listaProductos = new ArrayList<>();
 
     // Declaramos los AnchorPane
     @FXML private AnchorPane welcome_form;
@@ -165,6 +150,9 @@ public class FormController implements Initializable {
     //Variables para mostrar fecha
     SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
     Date date = new Date();
+
+    // Este es el codigo inicial del producto
+    private static int codigoInicial = 1;
 
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
@@ -315,19 +303,21 @@ public class FormController implements Initializable {
     @FXML
     private void ingresar_producto(ActionEvent event) {
         try {
-            int codigoProducto = Integer.parseInt(this.txtCod_Product.getText());
+            int codigoProducto = codigoInicial;
             String nombreProducto = txtNombre.getText();
             String modeloProducto = txtModelo.getText();
             int cantidadProducto = Integer.parseInt(txtCantidad.getText());
             double precioProducto = Double.parseDouble(txtPrecio.getText());
             int stockProducto = Integer.parseInt(txtStock.getText());
 
-            Producto producto = new Producto(codigoProducto, nombreProducto, modeloProducto, cantidadProducto, precioProducto, stockProducto);
-            if(!this.productos.contains(producto)) {
+            producto = new Producto(codigoProducto, nombreProducto, modeloProducto, cantidadProducto, precioProducto, stockProducto);
+            if(!this.productos.contains(producto)){
                 if (stockProducto>10) {
+                    codigoInicial++; // Incremento valor del codigo producto
                     this.productos.add(producto);
                     this.tbl_producto.setItems(productos);
-                    this.listaCodProducto.add(String.valueOf(codigoProducto)); // Agregamos el codigo de producto a la lista.
+                    this.listaProductos.add(producto);
+                    this.listaCodProducto.add(String.valueOf(producto.getCodigoProducto())); // Agregamos el codigo de producto a la lista.
                 } else {
                     Alert alert = new Alert(Alert.AlertType.ERROR);
                     alert.setHeaderText(null);
@@ -336,11 +326,11 @@ public class FormController implements Initializable {
                     alert.showAndWait();
                 }
             } else {
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setHeaderText(null);
-                alert.setTitle("Error");
-                alert.setContentText("El producto ya existe");
-                alert.showAndWait();
+                    Alert alert = new Alert(Alert.AlertType.ERROR);
+                    alert.setHeaderText(null);
+                    alert.setTitle("Error");
+                    alert.setContentText("El producto ya existe");
+                    alert.showAndWait();
             }
         } catch (NumberFormatException e){
             Alert alert = new Alert(Alert.AlertType.ERROR);
@@ -354,30 +344,23 @@ public class FormController implements Initializable {
     @FXML
     public void modificar_producto(ActionEvent event) {
         try {
-            int codigoProducto = Integer.parseInt(this.txtCod_Product.getText());
+            Producto productoAModificar = getTablaProductoSeleccionado();
+            int codigoProducto = productos.indexOf(productoAModificar) + 1;
             String nombreProducto = txtNombre.getText();
             String modeloProducto = txtModelo.getText();
             int cantidadProducto = Integer.parseInt(txtCantidad.getText());
             double precioProducto = Double.parseDouble(txtPrecio.getText());
             int stockProducto = Integer.parseInt(txtStock.getText());
 
-            Producto producto = new Producto(codigoProducto, nombreProducto, modeloProducto, cantidadProducto, precioProducto, stockProducto);
-            if(!this.productos.contains(producto)) {
-                if (stockProducto>10) {
-                    this.productos.set(posicionProductoTabla ,producto);
-                    this.tbl_producto.setItems(productos);
-                } else {
-                    Alert alert = new Alert(Alert.AlertType.ERROR);
-                    alert.setHeaderText(null);
-                    alert.setTitle("Error");
-                    alert.setContentText("El stock debe ser mayor que 10");
-                    alert.showAndWait();
-                }
+            producto = new Producto(codigoProducto, nombreProducto, modeloProducto, cantidadProducto, precioProducto, stockProducto);
+            if (stockProducto>10) {
+                this.productos.set(posicionProductoTabla ,producto);
+                this.tbl_producto.setItems(productos);
             } else {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setHeaderText(null);
                 alert.setTitle("Error");
-                alert.setContentText("El producto ya existe");
+                alert.setContentText("El stock debe ser mayor que 10");
                 alert.showAndWait();
             }
         } catch (NumberFormatException e){
@@ -389,15 +372,29 @@ public class FormController implements Initializable {
         }
     }
 
+    public static Producto consultarProductoPorCodigo(List<Producto> productos, int codigo) {
+        for (Producto producto : productos) {
+            if (producto.getCodigoProducto() == codigo) {
+                return producto;
+            }
+        }
+        return null; // Producto no encontrado
+    }
+
     @FXML
     public void consultar_producto(ActionEvent event) {
-        //TODO Crear Consulta Producto
-        // productos.remove(posicionProductoTabla);
+        int codigo = Integer.parseInt(txtNombre.getText());
+        Producto productoEncontrado = consultarProductoPorCodigo(productos, codigo);
+
+        if (productoEncontrado != null) {
+            System.out.println("Producto encontrado: " + productoEncontrado);
+        } else {
+            System.out.println("Producto no encontrado.");
+        }
     }
 
     @FXML
     public void clearProductoFields(ActionEvent event) {
-        txtCod_Product.setText("");
         txtNombre.setText("");
         txtModelo.setText("");
         txtCantidad.setText("");
@@ -430,7 +427,6 @@ public class FormController implements Initializable {
         if (producto != null) {
 
             // Colocamos los datos correspondientes en los TextFields
-            txtCod_Product.setText(String.valueOf(producto.getCodigoProducto()));
             txtNombre.setText(producto.getNombreProducto());
             txtModelo.setText(producto.getModeloProducto());
             txtCantidad.setText(String.valueOf(producto.getCantidadProducto()));
@@ -484,9 +480,25 @@ public class FormController implements Initializable {
         }
     }
 
+    public static Venta consultarVentaPorCodigo(List<Venta> ventas, int codigo) {
+        for (Venta venta : ventas) {
+            if (venta.getCodigoVenta() == codigo) {
+                return venta;
+            }
+        }
+        return null; // Venta no encontrada
+    }
+
     @FXML
     public void consultar_venta(ActionEvent event) {
-        //TODO Crear Consulta Venta
+        int codigo = Integer.parseInt(txtCodigoVenta.getText());
+        Venta ventaEncontrada = consultarVentaPorCodigo(ventas, codigo);
+
+        if (ventaEncontrada != null) {
+            System.out.println("Venta encontrado: " + ventaEncontrada);
+        } else {
+            System.out.println("Venta no encontrado.");
+        }
     }
 
     @FXML
@@ -537,9 +549,25 @@ public class FormController implements Initializable {
         }
     }
 
+    public static Compra consultarCompraPorCodigo(List<Compra> compras, int codigo) {
+        for (Compra compra : compras) {
+            if (compra.getCodigoCompra() == codigo) {
+                return compra;
+            }
+        }
+        return null; // Compra no encontrada
+    }
+
     @FXML
     public void consultar_compra(ActionEvent event){
-        //TODO Crear Consulta Compra
+        int codigo = Integer.parseInt(txtCodCompra.getText());
+        Compra compraEncontrada = consultarCompraPorCodigo(compras, codigo);
+
+        if (compraEncontrada != null) {
+            System.out.println("Compra encontrada: " + compraEncontrada);
+        } else {
+            System.out.println("Compra no encontrada.");
+        }
     }
 
     @FXML
@@ -583,9 +611,25 @@ public class FormController implements Initializable {
         }
     }
 
+    public static Pedido consultarPedidoPorCodigo(List<Pedido> pedidos, int codigo) {
+        for (Pedido pedido : pedidos) {
+            if (pedido.getCodigoPedido() == codigo) {
+                return pedido;
+            }
+        }
+        return null; // Pedido no encontrado
+    }
+
     @FXML
     public void consultar_pedido(ActionEvent event){
-        //TODO Crear Consulta Pedido
+        int codigo = Integer.parseInt(txtCodigoPedido.getText());
+        Pedido pedidoEncontrado = consultarPedidoPorCodigo(pedidos, codigo);
+
+        if (pedidoEncontrado != null) {
+            System.out.println("Pedido encontrado: " + pedidoEncontrado);
+        } else {
+            System.out.println("Pedido no encontrado.");
+        }
     }
 
     @FXML
@@ -676,9 +720,24 @@ public class FormController implements Initializable {
         }
     }
 
+    public static Proveedor consultarProveedorPorCodigo(List<Proveedor> proveedores, int codigo) {
+        for (Proveedor proveedor : proveedores) {
+            if (proveedor.getCodigoProveedor() == codigo) {
+                return proveedor;
+            }
+        }
+        return null; // Proveedor no encontrado
+    }
+
     @FXML
     public void consultar_proveedor(ActionEvent event){
-        //TODO Crear Consulta Proveedor
+        int codigo = Integer.parseInt(txtCodigoProveedor.getText());
+        Proveedor proveedorEncontrado = consultarProveedorPorCodigo(proveedores, codigo);
+        if (proveedorEncontrado != null) {
+            System.out.println("Proveedor encontrado: " + proveedorEncontrado);
+        } else {
+            System.out.println("Proveedor no encontrado.");
+        }
     }
 
     @FXML

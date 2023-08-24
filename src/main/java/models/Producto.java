@@ -3,7 +3,6 @@ package models;
 import java.util.Objects;
 
 public class Producto {
-
     private int codigoProducto;
     private String nombreProducto;
     private String modeloProducto;
@@ -82,12 +81,12 @@ public class Producto {
     public boolean equals(Object o) {
         if (this == o) return true;
         if (!(o instanceof Producto producto)) return false;
-        return codigoProducto == producto.codigoProducto && Objects.equals(nombreProducto, producto.nombreProducto) && Objects.equals(modeloProducto, producto.modeloProducto);
+        return Objects.equals(modeloProducto, producto.modeloProducto);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(codigoProducto, nombreProducto, modeloProducto);
+        return Objects.hash(modeloProducto);
     }
 }
 
